@@ -1,12 +1,9 @@
-name: Update rusEFI Reference
-
-on:
-  schedule:
-    - cron: '5 17 * * *' # update rusEFI reference daily at 5:05 pm
-  workflow_dispatch:
-
+# Neutralized by RusEFI Custom Firmware Studio.
+# The original upstream workflow was replaced — only build-firmware.yaml runs.
+name: disabled
+on: { workflow_dispatch: {} }
 jobs:
-  call-workflow-passing-data:
-    uses: rusefi/rusefi/.github/workflows/custom-board-update-rusefi-reference.yaml@master
-    permissions:
-      contents: write
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow has been disabled by the firmware generator."
