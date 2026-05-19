@@ -10,11 +10,14 @@ if (!inPath || !mapPath || !outPath) {
   console.error("usage: translate-ini.mjs <in.ini> <translations.json> <out.ini>");
   process.exit(1);
 }
-// TunerStudio reads .ini as Windows-1252. The source .ini produced by
-// ConfigDefinition can be UTF-8 (multi-byte accents), so we decode as UTF-8
-// first, normalize punctuation that isn't in cp1252, and re-encode every
-// char to its single-byte cp1252 representation on write.
+// TunerStudio reads .ini as Windows-1252 (CP1252) single-byte text. The source
+// .ini may arrive as UTF-8 (with or without BOM), ISO-8859-1, ASCII or CP1252,
+// so we decode tolerantly and ALWAYS re-emit as CP1252 — that's the only way
+// PT-BR accents render correctly regardless of the upstream encoding.
 const inputBytes = fs.readFileSync(inPath);
+const stripped = (inputBytes.length >= 3 && inputBytes[0] === 0xef && inputBytes[1] === 0xbb && inputBytes[2] === 0xbf)
+  ? inputBytes.subarray(3)
+  : inputBytes;
 const decodeCp1252 = (buf) => {
   const cp1252 = {0x80:0x20ac,0x82:0x201a,0x83:0x0192,0x84:0x201e,0x85:0x2026,0x86:0x2020,0x87:0x2021,0x88:0x02c6,0x89:0x2030,0x8a:0x0160,0x8b:0x2039,0x8c:0x0152,0x8e:0x017d,0x91:0x2018,0x92:0x2019,0x93:0x201c,0x94:0x201d,0x95:0x2022,0x96:0x2013,0x97:0x2014,0x98:0x02dc,0x99:0x2122,0x9a:0x0161,0x9b:0x203a,0x9c:0x0153,0x9e:0x017e,0x9f:0x0178};
   let s = "";
@@ -22,8 +25,8 @@ const decodeCp1252 = (buf) => {
   return s;
 };
 const raw = (() => {
-  try { return new TextDecoder("utf-8", { fatal: true }).decode(inputBytes); }
-  catch { return decodeCp1252(inputBytes); }
+  try { return new TextDecoder("utf-8", { fatal: true }).decode(stripped).replace(/^\uFEFF/, ""); }
+  catch { return decodeCp1252(stripped).replace(/^\uFEFF/, ""); }
 })();
 const data = JSON.parse(fs.readFileSync(mapPath, "utf8"));
 const map = new Map();
@@ -40,8 +43,8 @@ const sanitize = (s) => normalize(s)
   .replace(/\s{2,}/g, " ")
   .trim();
 const toCp1252 = (s) => sanitize(s);
-const toCp1252Bytes = (s) => {
-  const cleaned = normalize(s);
+const toIniBytes = (s) => {
+  const cleaned = normalize(s).replace(/^\uFEFF/, "");
   const extra = {0x20ac:0x80,0x201a:0x82,0x0192:0x83,0x201e:0x84,0x2026:0x85,0x2020:0x86,0x2021:0x87,0x02c6:0x88,0x2030:0x89,0x0160:0x8a,0x2039:0x8b,0x0152:0x8c,0x017d:0x8e,0x2018:0x91,0x2019:0x92,0x201c:0x93,0x201d:0x94,0x2022:0x95,0x2013:0x96,0x2014:0x97,0x02dc:0x98,0x2122:0x99,0x0161:0x9a,0x203a:0x9b,0x0153:0x9c,0x017e:0x9e,0x0178:0x9f};
   const bytes = [];
   for (const ch of cleaned) {
@@ -57,10 +60,41 @@ for (const e of data.entries || []) {
   }
 }
 
-let out = raw.replace(/"([^"\n]+)"/g, (full, content) => {
+// Translate UI sections only. Rewriting strings inside protocol sections
+// (e.g. [OutputChannels], [TunerStudio], [Constants]) can silently break the
+// TS/ECU handshake and hide runtime warning popups, even when the substitution
+// looks harmless. Skip those sections entirely.
+const PROTOCOL_SECTIONS = new Set([
+  "TunerStudio", "Constants", "OutputChannels", "PcVariables",
+  "KeyCommands", "Tools", "SettingGroups", "ReferenceTables",
+  "BurstMode", "Datalog", "LoggerDefinition", "AccelerometerLog",
+  "VeAnalyze", "WueAnalyze", "EventTriggers", "ControllerCommands",
+  "TableEditor", "CurveEditor",
+]);
+const translateBody = (body) => body.replace(/"([^"\n]+)"/g, (full, content) => {
   const tr = map.get(norm(content));
   return tr ? '"' + tr.replace(/"/g, "'") + '"' : full;
 });
+let out = "";
+{
+  const headerRe = /^[ \t]*\[([^\]]+)\][ \t]*$/gm;
+  const parts = [];
+  let lastSection = null;
+  let lastStart = 0;
+  let hm;
+  while ((hm = headerRe.exec(raw)) !== null) {
+    parts.push({ section: lastSection, start: lastStart, end: hm.index });
+    lastSection = hm[1].trim();
+    lastStart = headerRe.lastIndex;
+  }
+  parts.push({ section: lastSection, start: lastStart, end: raw.length });
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    const body = raw.slice(p.start, p.end);
+    out += PROTOCOL_SECTIONS.has(p.section || "") ? body : translateBody(body);
+    if (i < parts.length - 1) out += "[" + parts[i + 1].section + "]";
+  }
+}
 
 // Apply menu overrides (hide / rename subMenus)
 const overrides = data.menuOverrides || [];
@@ -107,5 +141,5 @@ if (fieldOverrides.length) {
 // the build. Overriding it would break the TunerStudio handshake.
 
 
-fs.writeFileSync(outPath, toCp1252Bytes(out));
-console.log("Translated", inPath, "->", outPath, "(" + map.size + " strings mapped, cp1252)");
+fs.writeFileSync(outPath, toIniBytes(out));
+console.log("Re-encoded", inPath, "->", outPath, "(" + map.size + " strings mapped, cp1252)");

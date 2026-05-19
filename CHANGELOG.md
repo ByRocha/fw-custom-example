@@ -1,5 +1,13 @@
 # Histórico de builds
 
+## v24 — 19/05/2026, 16:17:34
+_4 modificados_
+
+- **alterado** `.github/workflows/build-firmware.yaml` (+4/-3)
+- **alterado** `board.mk` (+1/-1)
+- **alterado** `generated/tunerstudio/WueAnalyze.ini` (+9/-9)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+336/-334)
+
 ## v23 — 19/05/2026, 15:29:56
 _Sem alterações em relação à build anterior_
 
