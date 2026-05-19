@@ -20,6 +20,7 @@ static void customBoardDefaultConfiguration() {
 	// === Reserve secondary UART pads (auto: prevents ADC/event_inputs hijack) ===
 	engineConfiguration->binarySerialTxPin = Gpio::A2;
 	engineConfiguration->binarySerialRxPin = Gpio::A3;
+	engineConfiguration->uartConsoleSerialSpeed = 115200;
 	efiSetPadMode("ts_uart_tx", Gpio::A2, PAL_MODE_ALTERNATE(7));
 	efiSetPadMode("ts_uart_rx", Gpio::A3, PAL_MODE_ALTERNATE(7));
 	// Pinos reservados pra UART (não serão atribuídos como ADC/saída): PA2, PA3, PC12, PC11, PC10, PD2

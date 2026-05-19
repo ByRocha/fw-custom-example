@@ -1,5 +1,17 @@
 # Histórico de builds
 
+## v19 — 19/05/2026, 14:40:32
+_8 modificados_
+
+- **alterado** `.github/workflows/build-firmware.yaml` (+1/-1)
+- **alterado** `generated/tunerstudio/WueAnalyze.ini` (+9/-9)
+- **alterado** `generated/tunerstudio/gauge_declarations.ini` (+177/-177)
+- **alterado** `generated/tunerstudio/rusefi_config_help.ini` (+389/-389)
+- **alterado** `generated/tunerstudio/secondary_panels.ini` (+141/-141)
+- **alterado** `generated/tunerstudio/top_level_menu.ini` (+213/-213)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+2229/-2231)
+- **alterado** `generated/tunerstudio/tuning.ini` (+1/-1)
+
 ## v18 — 19/05/2026, 14:19:48
 _7 modificados_
 
