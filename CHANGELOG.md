@@ -1,5 +1,28 @@
 # Histórico de builds
 
+## v18 — 19/05/2026, 14:19:48
+_7 modificados_
+
+- **alterado** `generated/tunerstudio/WueAnalyze.ini` (+9/-9)
+- **alterado** `generated/tunerstudio/gauge_declarations.ini` (+177/-177)
+- **alterado** `generated/tunerstudio/rusefi_config_help.ini` (+389/-400)
+- **alterado** `generated/tunerstudio/secondary_panels.ini` (+141/-141)
+- **alterado** `generated/tunerstudio/top_level_menu.ini` (+213/-213)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+2231/-2229)
+- **alterado** `generated/tunerstudio/tuning.ini` (+1/-1)
+
+## v17 — 19/05/2026, 14:15:02
+_6 novos, 2 modificados_
+
+- **alterado** `board_configuration.cpp` (+1/-0)
+- **novo** `generated/tunerstudio/WueAnalyze.ini` (+25)
+- **novo** `generated/tunerstudio/empty_board_options.ini` (+1)
+- **novo** `generated/tunerstudio/gauge_declarations.ini` (+368)
+- **novo** `generated/tunerstudio/main_page_gauges.ini` (+9)
+- **alterado** `generated/tunerstudio/rusefi_config_help.ini` (+156/-0)
+- **novo** `generated/tunerstudio/rusefi_config_shared_help.ini` (+2)
+- **novo** `generated/tunerstudio/rusefi_config_trigger_help.ini` (+2)
+
 ## v16 — 19/05/2026, 12:26:39
 _2 modificados_
 
