@@ -70,6 +70,7 @@ const PROTOCOL_SECTIONS = new Set([
   "BurstMode", "Datalog", "LoggerDefinition", "AccelerometerLog",
   "VeAnalyze", "WueAnalyze", "EventTriggers", "ControllerCommands",
   "TableEditor", "CurveEditor",
+  "Strings", "GaugeConfigurations", "FrontPage",
 ]);
 const translateBody = (body) => body.replace(/"([^"\n]+)"/g, (full, content) => {
   const tr = map.get(norm(content));

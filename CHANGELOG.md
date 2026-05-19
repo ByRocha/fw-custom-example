@@ -1,5 +1,16 @@
 # Histórico de builds
 
+## v26 — 19/05/2026, 18:13:28
+_2 modificados_
+
+- **alterado** `.github/workflows/build-firmware.yaml` (+1/-1)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+34/-34)
+
+## v25 — 19/05/2026, 17:41:36
+_Sem alterações em relação à build anterior_
+
+- (nenhuma alteração)
+
 ## v24 — 19/05/2026, 16:17:34
 _4 modificados_
 
