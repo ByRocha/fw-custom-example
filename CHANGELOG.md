@@ -1,5 +1,21 @@
 # Histórico de builds
 
+## v23 — 19/05/2026, 15:29:56
+_Sem alterações em relação à build anterior_
+
+- (nenhuma alteração)
+
+## v22 — 19/05/2026, 15:29:43
+_7 modificados_
+
+- **alterado** `generated/tunerstudio/WueAnalyze.ini` (+9/-9)
+- **alterado** `generated/tunerstudio/gauge_declarations.ini` (+188/-188)
+- **alterado** `generated/tunerstudio/rusefi_config_help.ini` (+391/-391)
+- **alterado** `generated/tunerstudio/secondary_panels.ini` (+141/-141)
+- **alterado** `generated/tunerstudio/top_level_menu.ini` (+210/-210)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+2201/-2202)
+- **alterado** `generated/tunerstudio/tuning.ini` (+1/-1)
+
 ## v21 — 19/05/2026, 15:14:21
 _Sem alterações em relação à build anterior_
 
