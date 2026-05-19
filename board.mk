@@ -26,7 +26,4 @@ DDEFS += -UTS_PRIMARY_UxART_PORT
 DDEFS += -UEFI_CONSOLE_TX_BRAIN_PIN
 DDEFS += -UEFI_CONSOLE_RX_BRAIN_PIN
 
-# Compress the .ini embedded in the USB MSD (gzip) to fit in flash
-DDEFS += -DEFI_USE_COMPRESSED_INI_MSD=TRUE
-
 # Translated TunerStudio .ini sources are staged from generated/tunerstudio/ by the build workflow

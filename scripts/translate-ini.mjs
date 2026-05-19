@@ -40,22 +40,9 @@ for (const e of data.entries || []) {
   }
 }
 
-// Fold rusEFI \<newline> continuations so multi-line help strings become a
-// single quoted token that our regex below can match (otherwise the EN text
-// for SettingContextHelp entries leaks through untranslated).
-const folded = raw.replace(/\\\r?\n[ \t]*/g, " ");
-
-// Match BOTH multi-line full-line help entries AND inline strings.
-let out = folded.replace(
-  /^([ \t]*[A-Za-z_]\w*[ \t]*=[ \t]*)"(.*)"([ \t]*(?:;.*)?)$/gm,
-  (full, pre, content, post) => {
-    const tr = map.get(norm(content));
-    return tr ? pre + '"' + String(tr).replace(/"/g, "'") + '"' + post : full;
-  },
-);
-out = out.replace(/"([^"\n]+)"/g, (full, content) => {
+let out = raw.replace(/"([^"\n]+)"/g, (full, content) => {
   const tr = map.get(norm(content));
-  return tr ? '"' + String(tr).replace(/"/g, "'") + '"' : full;
+  return tr ? '"' + tr.replace(/"/g, "'") + '"' : full;
 });
 
 // Apply menu overrides (hide / rename subMenus)

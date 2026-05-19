@@ -1,5 +1,11 @@
 # Histórico de builds
 
+## v16 — 19/05/2026, 12:26:39
+_2 modificados_
+
+- **alterado** `.github/workflows/build-firmware.yaml` (+1/-24)
+- **alterado** `board.mk` (+0/-2)
+
 ## v15 — 19/05/2026, 12:13:54
 _Sem alterações em relação à build anterior_
 
