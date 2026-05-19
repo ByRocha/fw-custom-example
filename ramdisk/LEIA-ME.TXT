@@ -1,0 +1,6 @@
+Bem-vindo a ECU Urutau!
+
+Este é um firmware baseado em RusEFI.
+
+Este disco virtual contém o arquivo .ini do TunerStudio já traduzido para Português.
+Abra o arquivo rusefi_*.ini com o TunerStudio para iniciar a configuração.

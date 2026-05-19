@@ -1,81 +1,170 @@
+# Auto-generated connector mapping
 pins:
-  - id: B14
-    class: outputs
-    ts_name: B14 Output
-
-  - id: EFI_ADC_0
-    class: analog_inputs
-# getAdcChannelBrainPin in 'stm32_adc.cpp' says EFI_ADC_0 is PA0
-    ts_name: On-board Battery Sense (A0)
-
   - id: EFI_ADC_1
     class: analog_inputs
-    ts_name: Analog Inputs 1 (A1)
-
-  - id: EFI_ADC_2
-    class: analog_inputs
-    ts_name: Analog Inputs 2 (A2)
-
-  - id: EFI_ADC_3
-    class: analog_inputs
-    ts_name: Analog Inputs 3 (A3)
-
-  - id: EFI_ADC_4
-    class: analog_inputs
-    ts_name: Analog Inputs 4 (A4)
-
+    function: MAP
+    ts_name: "MAP - PRETO C8"
   - id: EFI_ADC_5
     class: analog_inputs
-    ts_name: On-board MAP (A5)
-
-  - id: EFI_ADC_6
+    function: CLT
+    ts_name: "CLT - PRETO C5"
+  - id: EFI_ADC_4
     class: analog_inputs
-    ts_name: Analog Inputs 6 (A6)
-
+    function: IAT
+    ts_name: "IAT - PRETO C6"
   - id: EFI_ADC_7
     class: analog_inputs
-    ts_name: Analog Inputs 7 (A7)
-
-  - id: EFI_ADC_8
+    function: VBAT
+    ts_name: "VBATT - INTERNO"
+  - id: EFI_ADC_6
     class: analog_inputs
-    ts_name: On-board BARO (B0)
-
-  - id: EFI_ADC_9
+    function: EGO1
+    ts_name: "O2 - PRETO C4"
+  - id: B12
+    class: outputs
+    function: INJ1
+    ts_name: "CINZA - A1"
+  - id: B13
+    class: outputs
+    function: INJ2
+    ts_name: "CINZA - A2"
+  - id: B14
+    class: outputs
+    function: INJ3
+    ts_name: "CINZA - A3"
+  - id: B15
+    class: outputs
+    function: INJ4
+    ts_name: "CINZA - A4"
+  - id: A8
+    class: outputs
+    function: IGN1
+    ts_name: "CINZA - B1"
+  - id: A9
+    class: outputs
+    function: IGN2
+    ts_name: "CINZA - B2"
+  - id: A10
+    class: outputs
+    function: IGN3
+    ts_name: "CINZA - B3"
+  - id: B6
+    class: outputs
+    function: IGN4
+    ts_name: "CINZA - B4"
+  - id: C3
+    class: event_inputs
+    function: TRIGGER1
+    ts_name: "PRETO - B2 - ROTAÇÃO"
+  - id: C4
+    class: event_inputs
+    function: CAM1
+    ts_name: "PRETO - B4 - FASE"
+  - id: B11
+    class: outputs
+    function: FUEL_PUMP
+    ts_name: "CINZA - C7"
+  - id: B9
+    class: outputs
+    function: FAN1
+    ts_name: "CINZA - C2"
+  - id: A15
+    class: outputs
+    function: IDLE
+    ts_name: "CINZA - B8"
+  - id: E3
+    class: outputs
+    function: CHECK_ENGINE
+    ts_name: "CHECK_ENGINE"
+  - id: EFI_ADC_0
     class: analog_inputs
-    ts_name: Analog Inputs 9 (B1)
-
+    function: TPS1
+    ts_name: "TPS - PRETO C7"
+  - id: C6
+    class: outputs
+    function: INJ5
+    ts_name: "CINZA - A5"
+  - id: C7
+    class: outputs
+    function: INJ6
+    ts_name: "CINZA - A6"
+  - id: C8
+    class: outputs
+    function: INJ7
+    ts_name: "CINZA - A7"
+  - id: C9
+    class: outputs
+    function: INJ8
+    ts_name: "CINZA - A8"
+  - id: B7
+    class: outputs
+    function: TACHO
+    ts_name: "PRETO - B1"
+  - id: B0
+    class: outputs
+    function: STEPPER_DIR
+    ts_name: "STEPPER_DIR"
+  - id: B1
+    class: outputs
+    function: STEPPER_STEP
+    ts_name: "STEPPER_STEP"
+  - id: B10
+    class: outputs
+    function: STEPPER_ENABLE
+    ts_name: "STEPPER_ENABLE"
+  - id: B2
+    class: event_inputs
+    function: PRETO_B7_DIGITAL
+    ts_name: "PRETO - B7 - DIGITAL"
+  - id: B2
+    class: switch_inputs
+    function: PRETO_B7_DIGITAL
+    ts_name: "PRETO - B7 - DIGITAL"
+  - id: C13
+    class: event_inputs
+    function: PRETO_B6_DIGITAL
+    ts_name: "PRETO - B6 - DIGITAL"
+  - id: C13
+    class: switch_inputs
+    function: PRETO_B6_DIGITAL
+    ts_name: "PRETO - B6 - DIGITAL"
+  - id: B8
+    class: outputs
+    function: CINZA_C1
+    ts_name: "CINZA - C1"
+  - id: B5
+    class: outputs
+    function: CINZA_B7
+    ts_name: "CINZA - B7"
+  - id: C5
+    class: event_inputs
+    function: PRETO_A7_DIGITAL
+    ts_name: "PRETO - A7 - DIGITAL"
+  - id: C5
+    class: switch_inputs
+    function: PRETO_A7_DIGITAL
+    ts_name: "PRETO - A7 - DIGITAL"
   - id: EFI_ADC_10
     class: analog_inputs
-    ts_name: Analog Inputs 10 (C0)
-
+    function: PRETO_A6_ANAL_GICO
+    ts_name: "PRETO - A6  - ANALÓGICO"
   - id: EFI_ADC_11
     class: analog_inputs
-    ts_name: Primary On-board O2 (C1)
-
-  - id: EFI_ADC_12
-    class: analog_inputs
-    ts_name: Secondary On-board O2 (C2)
-
-  - id: EFI_ADC_13
-    class: analog_inputs
-    ts_name: Analog Inputs 13 (C3)
-
-  - id: EFI_ADC_14
-    class: analog_inputs
-    ts_name: Analog Inputs 14 (C4)
-
-  - id: EFI_ADC_15
-    class: analog_inputs
-    ts_name: Analog Inputs 15 (C5)
-
-  - id: [E2, E2]
-    class: [switch_inputs, event_inputs]
-    ts_name: VR/Hall 1 (E2)
-
-  - id: [E3, E3]
-    class: [switch_inputs, event_inputs]
-    ts_name: VR/Hall 2 (E3)
-
-  - id: [E4, E4]
-    class: [switch_inputs, event_inputs]
-    ts_name: VR/Hall 3 (E4)
+    function: PRETO_A5_ANAL_GICO
+    ts_name: "PRETO - A5 - ANALÓGICO"
+  - id: C10
+    class: switch_inputs
+    function: SPI3_SCK
+    ts_name: "SPI3_SCK"
+  - id: C11
+    class: switch_inputs
+    function: SPI3_MISO
+    ts_name: "SPI3_MISO"
+  - id: C12
+    class: switch_inputs
+    function: SPI3_MOSI
+    ts_name: "SPI3_MOSI"
+  - id: D2
+    class: outputs
+    function: SPI3_CS
+    ts_name: "SPI3_CS"
