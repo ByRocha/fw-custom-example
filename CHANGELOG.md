@@ -1,5 +1,10 @@
 # Histórico de builds
 
+## v21 — 19/05/2026, 15:14:21
+_Sem alterações em relação à build anterior_
+
+- (nenhuma alteração)
+
 ## v20 — 19/05/2026, 14:44:09
 _7 modificados_
 
