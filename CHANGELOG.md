@@ -1,5 +1,12 @@
 # Histórico de builds
 
+## v27 — 20/05/2026, 07:55:11
+_3 modificados_
+
+- **alterado** `.github/workflows/build-firmware.yaml` (+1/-1)
+- **alterado** `generated/tunerstudio/gauge_declarations.ini` (+7/-7)
+- **alterado** `generated/tunerstudio/tunerstudio.template.ini` (+34/-34)
+
 ## v26 — 19/05/2026, 18:13:28
 _2 modificados_
 

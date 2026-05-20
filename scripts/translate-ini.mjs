@@ -70,8 +70,9 @@ const PROTOCOL_SECTIONS = new Set([
   "BurstMode", "Datalog", "LoggerDefinition", "AccelerometerLog",
   "VeAnalyze", "WueAnalyze", "EventTriggers", "ControllerCommands",
   "TableEditor", "CurveEditor",
-  "Strings", "GaugeConfigurations", "FrontPage",
 ]);
+const RISKY_SECTIONS = new Set(["Strings", "GaugeConfigurations", "FrontPage"]);
+const riskyAllow = new Set(Array.isArray(data.translateRiskySections) ? data.translateRiskySections : (data.translateRisky ? ["Strings","GaugeConfigurations","FrontPage"] : []));
 const translateBody = (body) => body.replace(/"([^"\n]+)"/g, (full, content) => {
   const tr = map.get(norm(content));
   return tr ? '"' + tr.replace(/"/g, "'") + '"' : full;
@@ -92,7 +93,9 @@ let out = "";
   for (let i = 0; i < parts.length; i++) {
     const p = parts[i];
     const body = raw.slice(p.start, p.end);
-    out += PROTOCOL_SECTIONS.has(p.section || "") ? body : translateBody(body);
+    const sec = p.section || "";
+    const skip = PROTOCOL_SECTIONS.has(sec) || (RISKY_SECTIONS.has(sec) && !riskyAllow.has(sec));
+    out += skip ? body : translateBody(body);
     if (i < parts.length - 1) out += "[" + parts[i + 1].section + "]";
   }
 }
