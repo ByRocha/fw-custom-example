@@ -3,7 +3,7 @@
 
 void boardTuneDefaults() {
 	engineConfiguration->injector.flow = 250;
-	engineConfiguration->cylindersCount = 4;
+	engineConfiguration->cylindersCount = 5;
 	engineConfiguration->displacement = 2000;
 	engineConfiguration->cylinderBore = 81;
 	engineConfiguration->cranking.rpm = 350;
