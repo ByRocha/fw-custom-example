@@ -1,7 +1,5 @@
 # Auto-generated board.mk for urutau
-# Run ConfigDefinition through our wrapper so the generated .ini is customized before the USB MSD image is embedded
-CUSTOM_GEN_CONFIG = scripts/gen_config_translated.sh
-
+# Standard ConfigDefinition flow
 include $(BOARD_DIR)/firmware/firmware.mk
 
 BOARDINC += $(BOARD_DIR)/generated/controllers/generated
@@ -18,6 +16,8 @@ DDEFS += -UEFI_TS_SECONDARY_IS_SERIAL -DEFI_TS_SECONDARY_IS_SERIAL=TRUE
 DDEFS += -USTM32_SERIAL_USE_USART2 -DSTM32_SERIAL_USE_USART2=TRUE
 DDEFS += -USTM32_UART_USE_USART2 -DSTM32_UART_USE_USART2=FALSE
 DDEFS += -UTS_SERIAL_AF -DTS_SERIAL_AF=7
+DDEFS += -UTS_UART_DMA_MODE -DTS_UART_DMA_MODE=TRUE
+DDEFS += -UEFI_GPS -DEFI_GPS=FALSE
 DDEFS += -UHAL_USE_SPI -DHAL_USE_SPI=TRUE
 DDEFS += -USTM32_SPI_USE_SPI3 -DSTM32_SPI_USE_SPI3=TRUE
 DDEFS += -UHAL_USE_SERIAL -DHAL_USE_SERIAL=TRUE
@@ -26,4 +26,4 @@ DDEFS += -UTS_PRIMARY_UxART_PORT
 DDEFS += -UEFI_CONSOLE_TX_BRAIN_PIN
 DDEFS += -UEFI_CONSOLE_RX_BRAIN_PIN
 
-# Translated TunerStudio .ini sources are staged from generated/tunerstudio/ by the build workflow
+# (no translated .ini bundled)
