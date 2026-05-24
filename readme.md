@@ -1,4 +1,4 @@
-# urutau
+# urutauNCKZ
 
 Custom firmware para RusEFI gerada pelo **RusEFI Custom Firmware Studio**.
 

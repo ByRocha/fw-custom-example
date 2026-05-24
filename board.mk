@@ -1,4 +1,4 @@
-# Auto-generated board.mk for urutau
+# Auto-generated board.mk for urutauNCKZ
 # Run ConfigDefinition through our wrapper so the generated .ini is customized before the USB MSD image is embedded
 CUSTOM_GEN_CONFIG = scripts/gen_config_translated.sh
 
