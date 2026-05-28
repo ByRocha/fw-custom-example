@@ -1,16 +1,10 @@
 # urutau
 
-Custom firmware para RusEFI gerada pelo **RusEFI Custom Firmware Studio**.
+Custom firmware da RusEFI para ECU Urutau ByRocha
 
 ## Base
 Esta firmware é compilada **sobre a board upstream `urutau`** (pasta `firmware/config/boards/urutau` do submódulo rusefi).
-Os arquivos deste arquivo são overrides — só alteram o que você customizou; tudo o mais é herdado da board base.
-
-## Como usar
-1. Faça fork de https://github.com/rusefi/fw-custom-example
-2. Substitua os arquivos do fork pelos deste arquivo zip
-3. Faça push para o GitHub — o Actions compila a firmware
-4. O artefato `.ini` é baixado automaticamente pelo TunerStudio quando `SHORT_BOARD_NAME` está correto
+Os arquivos deste arquivo são overrides — só alteram o qye descrito abaixo; tudo o mais é herdado da board base.
 
 ## Arquivos no pacote
 - `meta-info.env` — identificação (SHORT_BOARD_NAME=urutau / PROJECT_CPU=ARCH_STM32F4)
