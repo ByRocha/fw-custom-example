@@ -1,4 +1,4 @@
-// Auto-generated default tune for urutau
+// Auto-generated default tune for urutau0.3
 #include "pch.h"
 
 void boardTuneDefaults() {

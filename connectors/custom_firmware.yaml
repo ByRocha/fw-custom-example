@@ -64,7 +64,7 @@ pins:
     class: outputs
     function: FUEL_PUMP
     ts_name: "CINZA - C7"
-  - id: B9
+  - id: B4
     class: outputs
     function: FAN1
     ts_name: "CINZA - C2"
@@ -91,12 +91,12 @@ pins:
   - id: C8
     class: outputs
     function: INJ7
-    ts_name: "CINZA - A7"
+    ts_name: "CINZA - A7 / IGN5 (B5)"
   - id: C9
     class: outputs
     function: INJ8
-    ts_name: "CINZA - A8"
-  - id: B7
+    ts_name: "CINZA - A8 / IGN6 (B6)"
+  - id: B3
     class: outputs
     function: TACHO
     ts_name: "PRETO - B1"
@@ -128,10 +128,6 @@ pins:
     class: switch_inputs
     function: PRETO_B6_DIGITAL
     ts_name: "PRETO - B6 - DIGITAL"
-  - id: B8
-    class: outputs
-    function: CINZA_C1
-    ts_name: "CINZA - C1"
   - id: B5
     class: outputs
     function: CINZA_B7
@@ -168,3 +164,15 @@ pins:
     class: outputs
     function: SPI3_CS
     ts_name: "SPI3_CS"
+  - id: B8
+    class: switch_inputs
+    function: CAN_RX
+    ts_name: "CAN_RX"
+  - id: B9
+    class: switch_inputs
+    function: CAN_TX
+    ts_name: "CAN_TX"
+  - id: EFI_ADC_12
+    class: analog_inputs
+    function: BARO
+    ts_name: "BARO (MAP INTERNO)"
