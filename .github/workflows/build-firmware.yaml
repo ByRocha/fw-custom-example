@@ -78,7 +78,7 @@ jobs:
           #    Export to $GITHUB_ENV for the build step.
           EXTRA_DIR="$(pwd)/ext/rusefi/firmware/hw_layer/mass_storage/custom_extra"
           echo "EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER=$EXTRA_DIR" >> "$GITHUB_ENV"
-          MSD_LABEL="$(printf '%s' 'urutau' | tr '[:lower:]' '[:upper:]' | tr -cd 'A-Z0-9_' | cut -c1-11)"
+          MSD_LABEL="$(printf '%s' 'urutau03' | tr '[:lower:]' '[:upper:]' | tr -cd 'A-Z0-9_' | cut -c1-11)"
           [ -n "$MSD_LABEL" ] || MSD_LABEL=CUSTOM
           echo "MSD_VOLUME_LABEL=$MSD_LABEL" >> "$GITHUB_ENV"
           MSD_SCSI_VENDOR="$(printf '%s' "$MSD_LABEL" | cut -c1-7)"
@@ -210,11 +210,11 @@ jobs:
           echo "Custom MSD files staged into $EXTRA_DIR:"
           ls -la "$EXTRA_DIR"
           du -cb "$EXTRA_DIR"/* 2>/dev/null | tail -1 || true
-      - name: Materialize project board into firmware/config/boards/urutau
+      - name: Materialize project board into firmware/config/boards/urutau03
         run: |
           set -e
           shopt -s nullglob
-          SBN="urutau"
+          SBN="urutau03"
           SRC=ext/rusefi/firmware/config/boards
           DST="$SRC/$SBN"
           # Use board1 as a template so we inherit Makefile/board_overrides/etc.
@@ -263,8 +263,8 @@ jobs:
           set +e
           shopt -s nullglob
           cd ext/rusefi/firmware
-          BOARD_DIR=config/boards/urutau
-          INI_NAME="rusefi_urutau.ini"
+          BOARD_DIR=config/boards/urutau03
+          INI_NAME="rusefi_urutau03.ini"
           export EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER="$EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER"
           export MSD_VOLUME_LABEL="$MSD_VOLUME_LABEL"
           echo "EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER=$EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER"
@@ -276,9 +276,9 @@ jobs:
             exit 0
           fi
           if [ ! -f "tunerstudio/generated/$INI_NAME" ]; then
-            bash gen_config_board.sh "$BOARD_DIR" "urutau" "$INI_NAME" || { echo "::warning::gen_config_board.sh failed; main build will retry"; exit 0; }
+            bash gen_config_board.sh "$BOARD_DIR" "urutau03" "$INI_NAME" || { echo "::warning::gen_config_board.sh failed; main build will retry"; exit 0; }
           fi
-          bash bin/gen_image_board.sh "$BOARD_DIR" "urutau" "$INI_NAME" || { echo "::warning::gen_image_board.sh failed; main build will retry"; exit 0; }
+          bash bin/gen_image_board.sh "$BOARD_DIR" "urutau03" "$INI_NAME" || { echo "::warning::gen_image_board.sh failed; main build will retry"; exit 0; }
           echo "=== Pre-gen MSD headers ==="
           for h in hw_layer/mass_storage/ramdisk_image.h hw_layer/mass_storage/ramdisk_image_compressed.h; do
             [ -f "$h" ] && echo "$(wc -c < "$h") bytes in $h"
@@ -446,7 +446,7 @@ jobs:
       - name: Upload firmware + translated .ini
         uses: actions/upload-artifact@v4
         with:
-          name: urutau-firmware
+          name: urutau03-firmware
           path: |
             ext/rusefi/artifacts/*.zip
             ext/rusefi/firmware/deliver/*
