@@ -1,0 +1,457 @@
+name: Build firmware
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { submodules: recursive }
+      - name: Install ARM GCC toolchain
+        uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: '12.3.Rel1'
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install build host tools (mtools, dosfstools, p7zip)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mtools dosfstools p7zip-full zip unzip
+      - name: Verify toolchain
+        run: |
+          arm-none-eabi-gcc --version
+          java -version
+          mcopy --version | head -n1
+      - name: Stage translator for generated .ini (minimal firmware intervention)
+        run: |
+          set -e
+          shopt -s nullglob
+          mkdir -p ext/rusefi/firmware/tunerstudio/generated
+          cp generated/tunerstudio/*.ini ext/rusefi/firmware/tunerstudio/generated/ 2>/dev/null || true
+          # --- Self-heal: regenerate the helper scripts inline so the build never depends
+          # --- on whether the user committed scripts/ or extracted the zip cleanly.
+          mkdir -p scripts ext/rusefi/firmware/scripts
+          echo 'IyEvdXNyL2Jpbi9lbnYgYmFzaApzZXQgLWV1byBwaXBlZmFpbAoKIyBDYWxsZWQgYnkgcnVzZWZpX2NvbmZpZy5tayB2aWEgQ1VTVE9NX0dFTl9DT05GSUcsIGZyb20gZXh0L3J1c2VmaS9maXJtd2FyZS4KIyBJdCBsZXRzIENvbmZpZ0RlZmluaXRpb24gZ2VuZXJhdGUgdGhlIGJvYXJkIC5pbmkgZmlyc3QsIHRoZW4gdHJhbnNsYXRlcyB0aGF0CiMgZXhhY3QgZmlsZSBiZWZvcmUgZ2VuX2ltYWdlX2JvYXJkLnNoIGVtYmVkcyBpdCBpbiB0aGUgVVNCIE1TRCByYW1kaXNrIGhlYWRlcnMuCgpCT0FSRF9ESVJfQVJHPSIke0JPQVJEX0RJUjotfSIKU0hPUlRfTkFNRT0iJHtTSE9SVF9CT0FSRF9OQU1FOi19IgppZiBbIC16ICIkQk9BUkRfRElSX0FSRyIgXSB8fCBbIC16ICIkU0hPUlRfTkFNRSIgXTsgdGhlbgogIGVjaG8gImdlbl9jb25maWdfdHJhbnNsYXRlZC5zaDogQk9BUkRfRElSIGFuZCBTSE9SVF9CT0FSRF9OQU1FIGFyZSByZXF1aXJlZCIgPiYyCiAgZXhpdCAxCmZpCgpCT0FSRF9ST09UPSQocmVhbHBhdGggIiRCT0FSRF9ESVJfQVJHIikKRklSTVdBUkVfUk9PVD0kKHB3ZCkKaWYgWyAhIC1mICIkRklSTVdBUkVfUk9PVC9nZW5fY29uZmlnX2JvYXJkLnNoIiBdOyB0aGVuCiAgRklSTVdBUkVfUk9PVD0kKHJlYWxwYXRoICIkKGRpcm5hbWUgIiQwIikvLi4iKQpmaQpJTklfTkFNRT0icnVzZWZpXyR7U0hPUlRfTkFNRX0uaW5pIgoKY2QgIiRGSVJNV0FSRV9ST09UIgpiYXNoIGdlbl9jb25maWdfYm9hcmQuc2ggIiRCT0FSRF9ESVJfQVJHIiAiJFNIT1JUX05BTUUiICIkSU5JX05BTUUiCgpJTklfUEFUSD0iJHtNRVRBX09VVFBVVF9ST09UX0ZPTERFUjotfXR1bmVyc3R1ZGlvL2dlbmVyYXRlZC8ke0lOSV9OQU1FfSIKVFJBTlNMQVRPUj0iJEZJUk1XQVJFX1JPT1Qvc2NyaXB0cy90cmFuc2xhdGUtaW5pLm1qcyIKTUFQX0ZJTEU9IiRGSVJNV0FSRV9ST09UL3NjcmlwdHMvdHJhbnNsYXRpb25zLmpzb24iCmlmIFsgISAtZiAiJFRSQU5TTEFUT1IiIF07IHRoZW4gVFJBTlNMQVRPUj0iJEJPQVJEX1JPT1Qvc2NyaXB0cy90cmFuc2xhdGUtaW5pLm1qcyI7IGZpCmlmIFsgISAtZiAiJE1BUF9GSUxFIiBdOyB0aGVuIE1BUF9GSUxFPSIkQk9BUkRfUk9PVC9zY3JpcHRzL3RyYW5zbGF0aW9ucy5qc29uIjsgZmkKCmlmIFsgLWYgIiRJTklfUEFUSCIgXSAmJiBbIC1mICIkVFJBTlNMQVRPUiIgXSAmJiBbIC1mICIkTUFQX0ZJTEUiIF07IHRoZW4KICBub2RlICIkVFJBTlNMQVRPUiIgIiRJTklfUEFUSCIgIiRNQVBfRklMRSIgIiRJTklfUEFUSCIKICBlY2hvICJnZW5fY29uZmlnX3RyYW5zbGF0ZWQuc2g6IHRyYW5zbGF0ZWQgZ2VuZXJhdGVkIE1TRCAuaW5pIGF0ICRJTklfUEFUSCIKZWxzZQogIGVjaG8gImdlbl9jb25maWdfdHJhbnNsYXRlZC5zaDogdHJhbnNsYXRpb24gc2tpcHBlZDsgbWlzc2luZyAkSU5JX1BBVEgsICRUUkFOU0xBVE9SIG9yICRNQVBfRklMRSIgPiYyCmZpCgojIENVU1RPTV9HRU5fQ09ORklHIHJlcGxhY2VzIHJ1c0VGSSdzIGRlZmF1bHQgZ2VuX2NvbmZpZy5zaCBicmFuY2gsIHdoaWNoIG5vcm1hbGx5CiMgY2FsbHMgYmluL2dlbl9pbWFnZV9ib2FyZC5zaCBhZnRlciBnZW5lcmF0aW5nIHRoZSAuaW5pLiBEbyBpdCBoZXJlIHRvbywgb3RoZXJ3aXNlCiMgbWFrZSBjYW4gY29tcGlsZSBzdGFsZS9kZWZhdWx0IE1TRCBoZWFkZXJzIGV2ZW4gd2hpbGUgdGhlIGdlbmVyYXRlZCAuaW5pIGlzIGZyZXNoLgppZiBbIC1mICIkRklSTVdBUkVfUk9PVC9iaW4vZ2VuX2ltYWdlX2JvYXJkLnNoIiBdOyB0aGVuCiAgcm0gLWYgLnJhbWRpc2stc2VudGluZWwgaHdfbGF5ZXIvbWFzc19zdG9yYWdlL3JhbWRpc2tfaW1hZ2UuaCBod19sYXllci9tYXNzX3N0b3JhZ2UvcmFtZGlza19pbWFnZV9jb21wcmVzc2VkLmgKICBiYXNoIGJpbi9nZW5faW1hZ2VfYm9hcmQuc2ggIiRCT0FSRF9ESVJfQVJHIiAiJFNIT1JUX05BTUUiICIkSU5JX05BTUUiCiAgZWNobyAiZ2VuX2NvbmZpZ190cmFuc2xhdGVkLnNoOiByZWdlbmVyYXRlZCBVU0IgTVNEIGltYWdlIGhlYWRlcnMgd2l0aCBjdXN0b20gcmFtZGlzayBmaWxlcyIKZWxzZQogIGVjaG8gImdlbl9jb25maWdfdHJhbnNsYXRlZC5zaDogYmluL2dlbl9pbWFnZV9ib2FyZC5zaCBtaXNzaW5nOyBNU0QgaW1hZ2Ugbm90IHJlZ2VuZXJhdGVkIiA+JjIKZmkK' | base64 -d > scripts/gen_config_translated.sh
+          echo 'IyEvdXNyL2Jpbi9lbnYgbm9kZQovLyBQb3N0LWJ1aWxkIC5pbmkgdHJhbnNsYXRvci4gUmVwbGFjZXMgZXZlcnkgcXVvdGVkIHN0cmluZyB0aGF0IGhhcyBhIFBULUJSIG1hcHBpbmcuCi8vIEFsc28gcmUtYXBwbGllcyBtZW51L2ZpZWxkIG92ZXJyaWRlcyBpZiBwcmVzZW50IGluIHRoZSB0cmFuc2xhdGlvbnMgZmlsZS4KLy8gVGhlIC5pbmkgc2lnbmF0dXJlIGxpbmUgaXMgaW50ZW50aW9uYWxseSBsZWZ0IGFsb25lIOKAlCBydXNFRkkgcmVnZW5lcmF0ZXMgaXQKLy8gZnJvbSBTSE9SVF9CT0FSRF9OQU1FICsgaW5pIGhhc2ggZHVyaW5nIHRoZSBidWlsZC4KaW1wb3J0IGZzIGZyb20gIm5vZGU6ZnMiOwoKY29uc3QgWywgLCBpblBhdGgsIG1hcFBhdGgsIG91dFBhdGhdID0gcHJvY2Vzcy5hcmd2OwppZiAoIWluUGF0aCB8fCAhbWFwUGF0aCB8fCAhb3V0UGF0aCkgewogIGNvbnNvbGUuZXJyb3IoInVzYWdlOiB0cmFuc2xhdGUtaW5pLm1qcyA8aW4uaW5pPiA8dHJhbnNsYXRpb25zLmpzb24+IDxvdXQuaW5pPiIpOwogIHByb2Nlc3MuZXhpdCgxKTsKfQovLyBUdW5lclN0dWRpbyByZWFkcyAuaW5pIGFzIFdpbmRvd3MtMTI1MiAoQ1AxMjUyKSBzaW5nbGUtYnl0ZSB0ZXh0LiBUaGUgc291cmNlCi8vIC5pbmkgbWF5IGFycml2ZSBhcyBVVEYtOCAod2l0aCBvciB3aXRob3V0IEJPTSksIElTTy04ODU5LTEsIEFTQ0lJIG9yIENQMTI1MiwKLy8gc28gd2UgZGVjb2RlIHRvbGVyYW50bHkgYW5kIEFMV0FZUyByZS1lbWl0IGFzIENQMTI1MiDigJQgdGhhdCdzIHRoZSBvbmx5IHdheQovLyBQVC1CUiBhY2NlbnRzIHJlbmRlciBjb3JyZWN0bHkgcmVnYXJkbGVzcyBvZiB0aGUgdXBzdHJlYW0gZW5jb2RpbmcuCmNvbnN0IGlucHV0Qnl0ZXMgPSBmcy5yZWFkRmlsZVN5bmMoaW5QYXRoKTsKY29uc3Qgc3RyaXBwZWQgPSAoaW5wdXRCeXRlcy5sZW5ndGggPj0gMyAmJiBpbnB1dEJ5dGVzWzBdID09PSAweGVmICYmIGlucHV0Qnl0ZXNbMV0gPT09IDB4YmIgJiYgaW5wdXRCeXRlc1syXSA9PT0gMHhiZikKICA/IGlucHV0Qnl0ZXMuc3ViYXJyYXkoMykKICA6IGlucHV0Qnl0ZXM7CmNvbnN0IGRlY29kZUNwMTI1MiA9IChidWYpID0+IHsKICBjb25zdCBjcDEyNTIgPSB7MHg4MDoweDIwYWMsMHg4MjoweDIwMWEsMHg4MzoweDAxOTIsMHg4NDoweDIwMWUsMHg4NToweDIwMjYsMHg4NjoweDIwMjAsMHg4NzoweDIwMjEsMHg4ODoweDAyYzYsMHg4OToweDIwMzAsMHg4YToweDAxNjAsMHg4YjoweDIwMzksMHg4YzoweDAxNTIsMHg4ZToweDAxN2QsMHg5MToweDIwMTgsMHg5MjoweDIwMTksMHg5MzoweDIwMWMsMHg5NDoweDIwMWQsMHg5NToweDIwMjIsMHg5NjoweDIwMTMsMHg5NzoweDIwMTQsMHg5ODoweDAyZGMsMHg5OToweDIxMjIsMHg5YToweDAxNjEsMHg5YjoweDIwM2EsMHg5YzoweDAxNTMsMHg5ZToweDAxN2UsMHg5ZjoweDAxNzh9OwogIGxldCBzID0gIiI7CiAgZm9yIChjb25zdCBiIG9mIGJ1ZikgcyArPSBTdHJpbmcuZnJvbUNvZGVQb2ludChjcDEyNTJbYl0gfHwgYik7CiAgcmV0dXJuIHM7Cn07CmNvbnN0IHJhdyA9ICgoKSA9PiB7CiAgdHJ5IHsgcmV0dXJuIG5ldyBUZXh0RGVjb2RlcigidXRmLTgiLCB7IGZhdGFsOiB0cnVlIH0pLmRlY29kZShzdHJpcHBlZCkucmVwbGFjZSgvXlx1RkVGRi8sICIiKTsgfQogIGNhdGNoIHsgcmV0dXJuIGRlY29kZUNwMTI1MihzdHJpcHBlZCkucmVwbGFjZSgvXlx1RkVGRi8sICIiKTsgfQp9KSgpOwpjb25zdCBkYXRhID0gSlNPTi5wYXJzZShmcy5yZWFkRmlsZVN5bmMobWFwUGF0aCwgInV0ZjgiKSk7CmNvbnN0IG1hcCA9IG5ldyBNYXAoKTsKY29uc3Qgbm9ybSA9IChzKSA9PiBTdHJpbmcocykucmVwbGFjZSgvXHMrL2csICIgIikudHJpbSgpOwpjb25zdCBub3JtYWxpemUgPSAocykgPT4gU3RyaW5nKHMpCiAgLnJlcGxhY2UoL1x1MDNiYy9nLCAiwrUiKQogIC5yZXBsYWNlKC9cdTAzYTkvZywgIk9obSIpCiAgLnJlcGxhY2UoL1x1MjIxMi9nLCAiLSIpCiAgLnJlcGxhY2UoL1x1MDBBMC9nLCAiICIpOwpjb25zdCBzYW5pdGl6ZSA9IChzKSA9PiBub3JtYWxpemUocykKICAucmVwbGFjZSgvW1xyXG5cdF0rL2csICIgIikKICAucmVwbGFjZSgvW1x1MDAwMC1cdTAwMDhcdTAwMGJcdTAwMGNcdTAwMGUtXHUwMDFmXHUwMDdmXS9nLCAiIikKICAucmVwbGFjZSgvIi9nLCAiJyIpCiAgLnJlcGxhY2UoL1xzezIsfS9nLCAiICIpCiAgLnRyaW0oKTsKY29uc3QgdG9DcDEyNTIgPSAocykgPT4gc2FuaXRpemUocyk7CmNvbnN0IHRvSW5pQnl0ZXMgPSAocykgPT4gewogIGNvbnN0IGNsZWFuZWQgPSBub3JtYWxpemUocykucmVwbGFjZSgvXlx1RkVGRi8sICIiKTsKICBjb25zdCBleHRyYSA9IHsweDIwYWM6MHg4MCwweDIwMWE6MHg4MiwweDAxOTI6MHg4MywweDIwMWU6MHg4NCwweDIwMjY6MHg4NSwweDIwMjA6MHg4NiwweDIwMjE6MHg4NywweDAyYzY6MHg4OCwweDIwMzA6MHg4OSwweDAxNjA6MHg4YSwweDIwMzk6MHg4YiwweDAxNTI6MHg4YywweDAxN2Q6MHg4ZSwweDIwMTg6MHg5MSwweDIwMTk6MHg5MiwweDIwMWM6MHg5MywweDIwMWQ6MHg5NCwweDIwMjI6MHg5NSwweDIwMTM6MHg5NiwweDIwMTQ6MHg5NywweDAyZGM6MHg5OCwweDIxMjI6MHg5OSwweDAxNjE6MHg5YSwweDIwM2E6MHg5YiwweDAxNTM6MHg5YywweDAxN2U6MHg5ZSwweDAxNzg6MHg5Zn07CiAgY29uc3QgYnl0ZXMgPSBbXTsKICBmb3IgKGNvbnN0IGNoIG9mIGNsZWFuZWQpIHsKICAgIGNvbnN0IGNjID0gY2guY29kZVBvaW50QXQoMCkgfHwgMHgzRjsKICAgIGlmIChjYyA8PSAweDdGIHx8IChjYyA+PSAweEEwICYmIGNjIDw9IDB4RkYpKSBieXRlcy5wdXNoKGNjKTsKICAgIGVsc2UgYnl0ZXMucHVzaChleHRyYVtjY10gfHwgMHgzRik7CiAgfQogIHJldHVybiBCdWZmZXIuZnJvbShieXRlcyk7Cn07CmZvciAoY29uc3QgZSBvZiBkYXRhLmVudHJpZXMgfHwgW10pIHsKICBpZiAoZSAmJiBlLmVuICYmIGUucHQgJiYgU3RyaW5nKGUucHQpLnRyaW0oKSkgewogICAgbWFwLnNldChub3JtKGUuZW4pLCB0b0NwMTI1MihlLnB0KSk7CiAgfQp9CgovLyBUcmFuc2xhdGUgVUkgc2VjdGlvbnMgb25seS4gUmV3cml0aW5nIHN0cmluZ3MgaW5zaWRlIHByb3RvY29sIHNlY3Rpb25zCi8vIChlLmcuIFtPdXRwdXRDaGFubmVsc10sIFtUdW5lclN0dWRpb10sIFtDb25zdGFudHNdKSBjYW4gc2lsZW50bHkgYnJlYWsgdGhlCi8vIFRTL0VDVSBoYW5kc2hha2UgYW5kIGhpZGUgcnVudGltZSB3YXJuaW5nIHBvcHVwcywgZXZlbiB3aGVuIHRoZSBzdWJzdGl0dXRpb24KLy8gbG9va3MgaGFybWxlc3MuIFNraXAgdGhvc2Ugc2VjdGlvbnMgZW50aXJlbHkuCmNvbnN0IFBST1RPQ09MX1NFQ1RJT05TID0gbmV3IFNldChbCiAgIlR1bmVyU3R1ZGlvIiwgIkNvbnN0YW50cyIsICJPdXRwdXRDaGFubmVscyIsICJQY1ZhcmlhYmxlcyIsCiAgIktleUNvbW1hbmRzIiwgIlRvb2xzIiwgIlNldHRpbmdHcm91cHMiLCAiUmVmZXJlbmNlVGFibGVzIiwKICAiQnVyc3RNb2RlIiwgIkRhdGFsb2ciLCAiTG9nZ2VyRGVmaW5pdGlvbiIsICJBY2NlbGVyb21ldGVyTG9nIiwKICAiVmVBbmFseXplIiwgIld1ZUFuYWx5emUiLCAiRXZlbnRUcmlnZ2VycyIsICJDb250cm9sbGVyQ29tbWFuZHMiLAogICJUYWJsZUVkaXRvciIsICJDdXJ2ZUVkaXRvciIsCl0pOwpjb25zdCBSSVNLWV9TRUNUSU9OUyA9IG5ldyBTZXQoWyJTdHJpbmdzIiwgIkdhdWdlQ29uZmlndXJhdGlvbnMiLCAiRnJvbnRQYWdlIl0pOwpjb25zdCByaXNreUFsbG93ID0gbmV3IFNldChBcnJheS5pc0FycmF5KGRhdGEudHJhbnNsYXRlUmlza3lTZWN0aW9ucykgPyBkYXRhLnRyYW5zbGF0ZVJpc2t5U2VjdGlvbnMgOiAoZGF0YS50cmFuc2xhdGVSaXNreSA/IFsiU3RyaW5ncyIsIkdhdWdlQ29uZmlndXJhdGlvbnMiLCJGcm9udFBhZ2UiXSA6IFtdKSk7CmNvbnN0IHRyYW5zbGF0ZUJvZHkgPSAoYm9keSkgPT4gYm9keS5yZXBsYWNlKC8iKFteIlxuXSspIi9nLCAoZnVsbCwgY29udGVudCkgPT4gewogIGNvbnN0IHRyID0gbWFwLmdldChub3JtKGNvbnRlbnQpKTsKICByZXR1cm4gdHIgPyAnIicgKyB0ci5yZXBsYWNlKC8iL2csICInIikgKyAnIicgOiBmdWxsOwp9KTsKbGV0IG91dCA9ICIiOwp7CiAgY29uc3QgaGVhZGVyUmUgPSAvXlsgXHRdKlxbKFteXF1dKylcXVsgXHRdKiQvZ207CiAgY29uc3QgcGFydHMgPSBbXTsKICBsZXQgbGFzdFNlY3Rpb24gPSBudWxsOwogIGxldCBsYXN0U3RhcnQgPSAwOwogIGxldCBobTsKICB3aGlsZSAoKGhtID0gaGVhZGVyUmUuZXhlYyhyYXcpKSAhPT0gbnVsbCkgewogICAgcGFydHMucHVzaCh7IHNlY3Rpb246IGxhc3RTZWN0aW9uLCBzdGFydDogbGFzdFN0YXJ0LCBlbmQ6IGhtLmluZGV4IH0pOwogICAgbGFzdFNlY3Rpb24gPSBobVsxXS50cmltKCk7CiAgICBsYXN0U3RhcnQgPSBoZWFkZXJSZS5sYXN0SW5kZXg7CiAgfQogIHBhcnRzLnB1c2goeyBzZWN0aW9uOiBsYXN0U2VjdGlvbiwgc3RhcnQ6IGxhc3RTdGFydCwgZW5kOiByYXcubGVuZ3RoIH0pOwogIGZvciAobGV0IGkgPSAwOyBpIDwgcGFydHMubGVuZ3RoOyBpKyspIHsKICAgIGNvbnN0IHAgPSBwYXJ0c1tpXTsKICAgIGNvbnN0IGJvZHkgPSByYXcuc2xpY2UocC5zdGFydCwgcC5lbmQpOwogICAgY29uc3Qgc2VjID0gcC5zZWN0aW9uIHx8ICIiOwogICAgY29uc3Qgc2tpcCA9IFBST1RPQ09MX1NFQ1RJT05TLmhhcyhzZWMpIHx8IChSSVNLWV9TRUNUSU9OUy5oYXMoc2VjKSAmJiAhcmlza3lBbGxvdy5oYXMoc2VjKSk7CiAgICBvdXQgKz0gc2tpcCA/IGJvZHkgOiB0cmFuc2xhdGVCb2R5KGJvZHkpOwogICAgaWYgKGkgPCBwYXJ0cy5sZW5ndGggLSAxKSBvdXQgKz0gIlsiICsgcGFydHNbaSArIDFdLnNlY3Rpb24gKyAiXSI7CiAgfQp9CgovLyBBcHBseSBtZW51IG92ZXJyaWRlcyAoaGlkZSAvIHJlbmFtZSBzdWJNZW51cykKY29uc3Qgb3ZlcnJpZGVzID0gZGF0YS5tZW51T3ZlcnJpZGVzIHx8IFtdOwppZiAob3ZlcnJpZGVzLmxlbmd0aCkgewogIGNvbnN0IGJ5SWQgPSBuZXcgTWFwKG92ZXJyaWRlcy5tYXAoKG8pID0+IFtvLmlkLCBvXSkpOwogIG91dCA9IG91dC5yZXBsYWNlKC9eXFtNZW51RWRpdG9yXF1bXlxbXSovbSwgKGJsb2NrKSA9PgogICAgYmxvY2suc3BsaXQoL1xyP1xuLykubWFwKChsaW5lKSA9PiB7CiAgICAgIGNvbnN0IG0gPSBsaW5lLm1hdGNoKC9eKFxzKilzdWJNZW51XHMqPVxzKihbQS1aYS16X11bXHddKilccyosXHMqIihbXiJdKykiKC4qKSQvKTsKICAgICAgaWYgKCFtKSByZXR1cm4gbGluZTsKICAgICAgY29uc3QgWywgaW5kZW50LCBpZCwgb2xkTGFiZWwsIHRhaWxdID0gbTsKICAgICAgY29uc3Qgb3YgPSBieUlkLmdldChpZCk7CiAgICAgIGlmICghb3YpIHJldHVybiBsaW5lOwogICAgICBjb25zdCBuZXdMYWJlbCA9IHRvQ3AxMjUyKChvdi5sYWJlbCB8fCBvbGRMYWJlbCkpLnJlcGxhY2UoLyIvZywgIiciKTsKICAgICAgY29uc3QgcmVidWlsdCA9IGluZGVudCArICdzdWJNZW51ID0gJyArIGlkICsgJywgIicgKyBuZXdMYWJlbCArICciJyArIHRhaWw7CiAgICAgIHJldHVybiBvdi5oaWRkZW4gPyBpbmRlbnQgKyAnOyBbaGlkZGVuXSAnICsgcmVidWlsdC50cmltKCkgOiByZWJ1aWx0OwogICAgfSkuam9pbigiXG4iKSwKICApOwp9CgovLyBBcHBseSBmaWVsZCBvdmVycmlkZXMgKGhpZGUgLyByZW5hbWUgImZpZWxkID0gLi4uLCB2YXJOYW1lIiBsaW5lcykKY29uc3QgZmllbGRPdmVycmlkZXMgPSBkYXRhLmZpZWxkT3ZlcnJpZGVzIHx8IFtdOwppZiAoZmllbGRPdmVycmlkZXMubGVuZ3RoKSB7CiAgY29uc3QgYnlWYXIgPSBuZXcgTWFwKCk7CiAgY29uc3QgYnlMYWJlbCA9IG5ldyBNYXAoKTsKICBmb3IgKGNvbnN0IG8gb2YgZmllbGRPdmVycmlkZXMpIHsKICAgIGlmICghbyB8fCAhby5wYXR0ZXJuKSBjb250aW51ZTsKICAgIGlmIChvLm1hdGNoVHlwZSA9PT0gInZhciIpIGJ5VmFyLnNldChvLnBhdHRlcm4sIG8pOwogICAgZWxzZSBieUxhYmVsLnNldChTdHJpbmcoby5wYXR0ZXJuKS50cmltKCksIG8pOwogIH0KICBvdXQgPSBvdXQucmVwbGFjZSgKICAgIC9eKFsgXHRdKikoZmllbGRccyo9XHMqIikoW14iXSspKCJccyosXHMqKShbQS1aYS16X11bXHddKikoW15cbl0qKSQvZ20sCiAgICAoZnVsbCwgaW5kZW50LCBwcmVmaXgsIGxhYmVsLCBtaWQsIHZhck5hbWUsIHRhaWwpID0+IHsKICAgICAgY29uc3Qgb3YgPSBieVZhci5nZXQodmFyTmFtZSkgfHwgYnlMYWJlbC5nZXQoU3RyaW5nKGxhYmVsKS50cmltKCkpOwogICAgICBpZiAoIW92KSByZXR1cm4gZnVsbDsKICAgICAgY29uc3QgbmV3TGFiZWwgPSB0b0NwMTI1Mihvdi5sYWJlbCB8fCBsYWJlbCkucmVwbGFjZSgvIi9nLCAiJyIpOwogICAgICBjb25zdCByZWJ1aWx0ID0gaW5kZW50ICsgcHJlZml4ICsgbmV3TGFiZWwgKyBtaWQgKyB2YXJOYW1lICsgdGFpbDsKICAgICAgcmV0dXJuIG92LmhpZGRlbiA/IGluZGVudCArICI7IFtoaWRkZW5dICIgKyByZWJ1aWx0LnRyaW0oKSA6IHJlYnVpbHQ7CiAgICB9LAogICk7Cn0KCi8vIE5PVEU6IHNpZ25hdHVyZSBpcyBpbnRlbnRpb25hbGx5IE5PVCB0b3VjaGVkIGhlcmUg4oCUIHJ1c0VGSSdzIGdlbl9zaWduYXR1cmUuc2gKLy8gY29tcHV0ZXMgaXQgZnJvbSBTSE9SVF9CT0FSRF9OQU1FICsgYSBoYXNoIG9mIHRoZSAuaW5pIGFuZCBlbWJlZHMgaXQgZHVyaW5nCi8vIHRoZSBidWlsZC4gT3ZlcnJpZGluZyBpdCB3b3VsZCBicmVhayB0aGUgVHVuZXJTdHVkaW8gaGFuZHNoYWtlLgoKCmZzLndyaXRlRmlsZVN5bmMob3V0UGF0aCwgdG9JbmlCeXRlcyhvdXQpKTsKY29uc29sZS5sb2coIlJlLWVuY29kZWQiLCBpblBhdGgsICItPiIsIG91dFBhdGgsICIoIiArIG1hcC5zaXplICsgIiBzdHJpbmdzIG1hcHBlZCwgY3AxMjUyKSIpOwo=' | base64 -d > scripts/translate-ini.mjs
+          # translations.json is per-project user content; fail loudly if it's missing.
+          [ -f scripts/translations.json ] || { echo "::error::scripts/translations.json is missing from the repo"; exit 1; }
+          cp scripts/gen_config_translated.sh scripts/translate-ini.mjs scripts/translations.json ext/rusefi/firmware/scripts/
+          chmod +x scripts/gen_config_translated.sh scripts/translate-ini.mjs ext/rusefi/firmware/scripts/gen_config_translated.sh ext/rusefi/firmware/scripts/translate-ini.mjs
+          echo "=== Helper scripts staged ==="
+          ls -la scripts/ ext/rusefi/firmware/scripts/gen_config_translated.sh ext/rusefi/firmware/scripts/translate-ini.mjs
+          # Do not let cached sentinels skip the custom translated config/image generation
+          rm -f ext/rusefi/firmware/.config-sentinel ext/rusefi/firmware/.ramdisk-sentinel
+          # Do not rewrite upstream tunerstudio source files before gen_config_board.sh.
+          # The wrapper translates only the final generated .ini, avoiding mojibake in menus.
+      - name: Stage custom USB MSD files (README + .url shortcuts)
+        run: |
+          set -e
+          shopt -s nullglob
+          # Also patch the rusEFI submodule through the same hook used by the official fw-custom-example workflows.
+          # This prevents old/legacy workflows from embedding the default "Welcome to rusEFI" README.
+          if [ -f .github/workflows/actions/post-checkout.sh ]; then bash .github/workflows/actions/post-checkout.sh; fi
+          # 1) Replace upstream filesystem_contents templates so even fallback paths use ours
+          mkdir -p ext/rusefi/firmware/hw_layer/mass_storage/filesystem_contents
+          if [ -f ramdisk/LEIA-ME.TXT ]; then
+            cp -f ramdisk/LEIA-ME.TXT ext/rusefi/firmware/hw_layer/mass_storage/filesystem_contents/README.template.txt
+            cp -f ramdisk/LEIA-ME.TXT ext/rusefi/firmware/hw_layer/mass_storage/filesystem_contents/README.nozip.template.txt
+          fi
+          # 2) Stage ALL ramdisk files into a dedicated folder we point the build at
+          rm -rf ext/rusefi/firmware/hw_layer/mass_storage/custom_extra
+          mkdir -p ext/rusefi/firmware/hw_layer/mass_storage/custom_extra
+          # Copy non-.ini files as-is, and 7z-compress any .ini (raw .ini files easily blow past the 128 KiB FAT ramdisk).
+          for f in ramdisk/*; do
+            [ -f "$f" ] || continue
+            name="$(basename "$f")"
+            case "$name" in
+              *.ini|*.INI)
+                7z a -mx9 "ext/rusefi/firmware/hw_layer/mass_storage/custom_extra/$name.7z" "$f" >/dev/null
+                ;;
+              *)
+                cp -f "$f" "ext/rusefi/firmware/hw_layer/mass_storage/custom_extra/$name"
+                ;;
+            esac
+          done
+          # 3) Tell rusEFI's create_ini_image.sh to use ONLY our files (overrides defaults).
+          #    Export to $GITHUB_ENV for the build step.
+          EXTRA_DIR="$(pwd)/ext/rusefi/firmware/hw_layer/mass_storage/custom_extra"
+          echo "EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER=$EXTRA_DIR" >> "$GITHUB_ENV"
+          MSD_LABEL="$(printf '%s' 'urutau' | tr '[:lower:]' '[:upper:]' | tr -cd 'A-Z0-9_' | cut -c1-11)"
+          [ -n "$MSD_LABEL" ] || MSD_LABEL=CUSTOM
+          echo "MSD_VOLUME_LABEL=$MSD_LABEL" >> "$GITHUB_ENV"
+          MSD_SCSI_VENDOR="$(printf '%s' "$MSD_LABEL" | cut -c1-7)"
+          MSD_SCSI_PRODUCT="$(printf '%s' "$MSD_LABEL" | cut -c1-15)"
+          export MSD_SCSI_VENDOR MSD_SCSI_PRODUCT
+          python3 - <<'CUSTOM_SCSI_PY'
+          from pathlib import Path
+          import os
+          path = Path("ext/rusefi/firmware/hw_layer/mass_storage/mass_storage_device.cpp")
+          text = path.read_text()
+          vendor = (os.environ.get("MSD_SCSI_VENDOR") or "CUSTOM").replace('\\', '').replace('"', '')[:7] or "CUSTOM"
+          product = (os.environ.get("MSD_SCSI_PRODUCT") or "CUSTOM") .replace('\\', '').replace('"', '')[:15] or "CUSTOM"
+          text = text.replace('"Chibios",', f'"{vendor}",')
+          text = text.replace('"Mass Storage",', f'"{product}",')
+          path.write_text(text)
+          print(f"Custom USB inquiry: vendor={vendor} product={product}")
+          CUSTOM_SCSI_PY
+          # 4) Replace upstream MSD image scripts so default rusEFI README/wiki/forum files cannot leak in.
+          cat > ext/rusefi/firmware/hw_layer/mass_storage/create_image.sh <<'CUSTOM_IMAGE_SH'
+          #!/bin/bash
+          set -e
+          H_OUTPUT=$1
+          FS_SIZE=$2
+          COMPRESS_IMAGE=$3
+          shift 3
+          IMAGE=ramdisk.image
+          PATH="$PATH:/usr/sbin"
+          LABEL="${MSD_VOLUME_LABEL:-CUSTOM}"
+          LABEL="$(printf '%s' "$LABEL" | tr '[:lower:]' '[:upper:]' | tr -cd 'A-Z0-9_' | cut -c1-11)"
+          [ -n "$LABEL" ] || LABEL=CUSTOM
+          echo "create_image CUSTOM: $H_OUTPUT size=$FS_SIZE compressed=$COMPRESS_IMAGE label=$LABEL files=$*"
+          rm -f "$IMAGE" "$IMAGE.gz"
+          dd if=/dev/zero of="$IMAGE" bs=1024 count="$FS_SIZE"
+          mkfs.fat -v -r 64 "$IMAGE"
+          fatlabel "$IMAGE" "$LABEL"
+          for file in "$@"; do
+            [ -f "$file" ] || { echo "Missing MSD file: $file"; exit 1; }
+            mcopy -o -i "$IMAGE" "$file" ::
+            echo "File '$file' is added to the custom image."
+          done
+          mkdir -p build
+          IMAGE_ARTIFACT="build/$(basename "$H_OUTPUT" .h).img"
+          cp -f "$IMAGE" "$IMAGE_ARTIFACT"
+          echo "Saved inspectable custom MSD image to $IMAGE_ARTIFACT"
+          if [ "$(printf '%s' "$COMPRESS_IMAGE" | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+            gzip "$IMAGE"
+            IMAGE_TO_OUTPUT="$IMAGE.gz"
+          else
+            IMAGE_TO_OUTPUT="$IMAGE"
+          fi
+          xxd -i "$IMAGE_TO_OUTPUT" | cat <(echo -n "static const ") - > "$H_OUTPUT"
+          rm -f "$IMAGE_TO_OUTPUT"
+          CUSTOM_IMAGE_SH
+          chmod +x ext/rusefi/firmware/hw_layer/mass_storage/create_image.sh
+          cat > ext/rusefi/firmware/hw_layer/mass_storage/create_ini_image.sh <<'CUSTOM_MSD_SH'
+          #!/bin/bash
+          set -e
+          FULL_INI=$1
+          H_OUTPUT=$2
+          FS_SIZE=$3
+          SHORT_BOARD_NAME=$4
+          BOARD_SPECIFIC_URL=$5
+          ZIP=rusefi.ini.zip
+          ZIP7=rusefi.ini.7z
+          PATH="$PATH:/usr/sbin"
+          echo "create_ini_image CUSTOM: ini $FULL_INI to $H_OUTPUT size $FS_SIZE for $SHORT_BOARD_NAME [$BOARD_SPECIFIC_URL]"
+          rm -f "$ZIP" "$ZIP7" ramdisk.image ramdisk.image.gz
+          zip -j "$ZIP" "$FULL_INI"
+          7z a -mx9 "$ZIP7" "$(pwd)/$FULL_INI"
+          INI_FILE="$ZIP7"
+          if [ "${RAMDISK_COMPRESSED:-}" = "no" ] || [ "${EFI_USE_COMPRESSED_INI:-}" = "FALSE" ]; then
+            INI_FILE="$FULL_INI"
+          fi
+          README_FILE_PATH="${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}/LEIA-ME.TXT"
+          if [ ! -f "$README_FILE_PATH" ]; then
+            README_FILE_PATH=hw_layer/mass_storage/filesystem_contents/README.template.txt
+          fi
+          EXTRA_FILES_TO_COPY_ON_IMAGE=()
+          if [ -n "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}" ] && [ -d "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}" ]; then
+            for file in "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER}"/*; do
+              [ -f "$file" ] || continue
+              [ "$(basename "$file")" = "LEIA-ME.TXT" ] && continue
+              EXTRA_FILES_TO_COPY_ON_IMAGE+=("$file")
+            done
+          fi
+          echo "Custom MSD root files: $INI_FILE $README_FILE_PATH ${EXTRA_FILES_TO_COPY_ON_IMAGE[*]}"
+          hw_layer/mass_storage/create_image.sh "$H_OUTPUT" "$FS_SIZE" false "$INI_FILE" "$README_FILE_PATH" "${EXTRA_FILES_TO_COPY_ON_IMAGE[@]}"
+          rm -f "$ZIP" "$ZIP7"
+          CUSTOM_MSD_SH
+          chmod +x ext/rusefi/firmware/hw_layer/mass_storage/create_ini_image.sh
+          # 4b) Same override for the COMPRESSED variant (this one is what the firmware actually embeds).
+          cat > ext/rusefi/firmware/hw_layer/mass_storage/create_ini_image_compressed.sh <<'CUSTOM_MSD_CSH'
+          #!/bin/bash
+          set -e
+          FULL_INI=$1
+          H_OUTPUT=$2
+          FS_SIZE=$3
+          SHORT_BOARD_NAME=$4
+          BOARD_SPECIFIC_URL=$5
+          PATH="$PATH:/usr/sbin"
+          echo "create_ini_image_compressed CUSTOM: ini $FULL_INI to $H_OUTPUT size $FS_SIZE for $SHORT_BOARD_NAME [$BOARD_SPECIFIC_URL]"
+          README_FILE_PATH="${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}/LEIA-ME.TXT"
+          if [ ! -f "$README_FILE_PATH" ]; then
+            README_FILE_PATH=hw_layer/mass_storage/filesystem_contents/README.nozip.template.txt
+          fi
+          EXTRA_FILES_TO_COPY_ON_IMAGE=()
+          if [ -n "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}" ] && [ -d "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER:-}" ]; then
+            for file in "${EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER}"/*; do
+              [ -f "$file" ] || continue
+              [ "$(basename "$file")" = "LEIA-ME.TXT" ] && continue
+              EXTRA_FILES_TO_COPY_ON_IMAGE+=("$file")
+            done
+          fi
+          echo "Custom MSD (compressed) root files: $FULL_INI $README_FILE_PATH ${EXTRA_FILES_TO_COPY_ON_IMAGE[*]}"
+          hw_layer/mass_storage/create_image.sh "$H_OUTPUT" "$FS_SIZE" true "$FULL_INI" "$README_FILE_PATH" "${EXTRA_FILES_TO_COPY_ON_IMAGE[@]}"
+          CUSTOM_MSD_CSH
+          chmod +x ext/rusefi/firmware/hw_layer/mass_storage/create_ini_image_compressed.sh
+          # 4c) Neutralize the upstream filesystem_contents folder so any stray reference picks up nothing.
+          rm -f ext/rusefi/firmware/hw_layer/mass_storage/filesystem_contents/*.url || true
+          # 5) Compression + image-size knobs (consumed by create_ini_image*.sh)
+          # 6) Also keep the legacy ramdisk/ path populated for any older make rules
+          mkdir -p ext/rusefi/firmware/hw_layer/mass_storage/ramdisk
+          cp -f ramdisk/* ext/rusefi/firmware/hw_layer/mass_storage/ramdisk/ 2>/dev/null || true
+          # 7) Invalidate cached MSD image and any stale build/ artifacts so headers are regenerated
+          rm -f ext/rusefi/firmware/.ramdisk-sentinel \
+                ext/rusefi/firmware/hw_layer/mass_storage/ramdisk_image.h \
+                ext/rusefi/firmware/hw_layer/mass_storage/ramdisk_image_compressed.h
+          rm -f ext/rusefi/firmware/build/ramdisk*.img ext/rusefi/firmware/build/ramdisk*.bin 2>/dev/null || true
+          echo "Custom MSD files staged into $EXTRA_DIR:"
+          ls -la "$EXTRA_DIR"
+          du -cb "$EXTRA_DIR"/* 2>/dev/null | tail -1 || true
+      - name: Materialize project board into firmware/config/boards/urutau
+        run: |
+          set -e
+          shopt -s nullglob
+          SBN="urutau"
+          SRC=ext/rusefi/firmware/config/boards
+          DST="$SRC/$SBN"
+          # Use board1 as a template so we inherit Makefile/board_overrides/etc.
+          if [ ! -d "$DST" ]; then
+            if [ -d "$SRC/board1" ]; then cp -r "$SRC/board1" "$DST"; else mkdir -p "$DST"; fi
+          fi
+          # Overwrite with the project files generated by RusEFI Custom Firmware Studio
+          for f in board.mk board_configuration.cpp prepend.txt board_config.txt knock_config.h default_tune.cpp fw_configuration.cpp meta-info.env; do
+            [ -f "$f" ] && cp -f "$f" "$DST/$f"
+          done
+          mkdir -p "$DST/connectors"
+          cp -f connectors/*.yaml "$DST/connectors/" 2>/dev/null || true
+          # Replace inherited ramdisk/ with the project's MSD files (README + .url shortcuts)
+          rm -rf "$DST/ramdisk"
+          mkdir -p "$DST/ramdisk"
+          if [ -d ramdisk ]; then cp -f ramdisk/* "$DST/ramdisk/" 2>/dev/null || true; fi
+          echo "=== Board ramdisk contents ==="
+          ls -la "$DST/ramdisk" || true
+          # Make sure SHORT_BOARD_NAME inside meta-info matches the folder name
+          if [ -f "$DST/meta-info.env" ]; then
+            grep -q "^SHORT_BOARD_NAME=$SBN$" "$DST/meta-info.env" || \
+              sed -i "s/^SHORT_BOARD_NAME=.*/SHORT_BOARD_NAME=$SBN/" "$DST/meta-info.env"
+            grep -q "^PROJECT_BOARD=$SBN$" "$DST/meta-info.env" || \
+              sed -i "s/^PROJECT_BOARD=.*/PROJECT_BOARD=$SBN/" "$DST/meta-info.env"
+          fi
+          # Drop example boards so compile_firmware.sh only emits OUR bundle
+          for b in "$SRC"/*/; do
+            name="$(basename "$b")"
+            [ "$name" = "$SBN" ] || rm -rf "$b"
+          done
+          echo "=== Final boards ==="
+          ls "$SRC"
+      - name: Build configuration_definition jar (needed for MSD pre-gen)
+        continue-on-error: true
+        run: |
+          set -e
+          cd ext/rusefi/java_tools
+          if [ -x ./gradlew ]; then
+            ./gradlew :configuration_definition:shadowJar --no-daemon || \
+              ./gradlew :configuration_definition:build --no-daemon || true
+          fi
+          ls -la configuration_definition/build/libs/ 2>/dev/null || true
+      - name: Pre-generate USB MSD ramdisk headers (best-effort; main build will retry)
+        continue-on-error: true
+        run: |
+          set +e
+          shopt -s nullglob
+          cd ext/rusefi/firmware
+          BOARD_DIR=config/boards/urutau
+          INI_NAME="rusefi_urutau.ini"
+          export EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER="$EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER"
+          export MSD_VOLUME_LABEL="$MSD_VOLUME_LABEL"
+          echo "EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER=$EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER"
+          echo "MSD_VOLUME_LABEL=$MSD_VOLUME_LABEL"
+          ls -la "$EXTRA_FILES_TO_COPY_ON_IMAGE_FOLDER" || true
+          JAR=../java_tools/configuration_definition/build/libs/config_definition-all.jar
+          if [ ! -f "$JAR" ]; then
+            echo "::warning::$JAR missing — skipping pre-gen, main build will run gen_config_board.sh + gen_image_board.sh with our overridden scripts."
+            exit 0
+          fi
+          if [ ! -f "tunerstudio/generated/$INI_NAME" ]; then
+            bash gen_config_board.sh "$BOARD_DIR" "urutau" "$INI_NAME" || { echo "::warning::gen_config_board.sh failed; main build will retry"; exit 0; }
+          fi
+          bash bin/gen_image_board.sh "$BOARD_DIR" "urutau" "$INI_NAME" || { echo "::warning::gen_image_board.sh failed; main build will retry"; exit 0; }
+          echo "=== Pre-gen MSD headers ==="
+          for h in hw_layer/mass_storage/ramdisk_image.h hw_layer/mass_storage/ramdisk_image_compressed.h; do
+            [ -f "$h" ] && echo "$(wc -c < "$h") bytes in $h"
+          done
+          touch .ramdisk-sentinel 2>/dev/null || true
+      - name: Patch lua.cpp for boards with CAN disabled
+        run: |
+          set -e
+          F=ext/rusefi/firmware/controllers/lua/lua.cpp
+          [ -f "$F" ] || { echo "lua.cpp not found, skipping"; exit 0; }
+          # Upstream rusEFI references CAN-only symbols (totalRxCount, getLuaCanRxDropped, rxTime)
+          # inside a Lua FFI binding without #if EFI_CAN_SUPPORT guard. When a custom board builds
+          # without CAN, compilation fails. Wrap the offending block.
+          if grep -q "getLuaCanRxDropped\|totalRxCount\|recentRxCount" "$F" && ! grep -q "LUA_CAN_PATCH_APPLIED" "$F"; then
+            python3 - "$F" <<'PY'
+          import re, sys
+          p = sys.argv[1]
+          src = open(p).read()
+          # Wrap the two adjacent efiPrintf() calls that reference CAN-only symbols
+          # (totalRxCount/recentRxCount/getLuaCanRxDropped and rxTime/luaRxTime).
+          pat = re.compile(
+              r'([ \t]*efiPrintf\([^;]*?(?:totalRxCount|getLuaCanRxDropped)[^;]*?;\s*'
+              r'(?:efiPrintf\([^;]*?(?:luaRxTime|rxTime)[^;]*?;\s*)?)',
+              re.S)
+          m = pat.search(src)
+          if not m:
+              # Fallback: wrap each individual offending line
+              pat2 = re.compile(r'([ \t]*efiPrintf\([^;]*?(?:totalRxCount|getLuaCanRxDropped|luaRxTime|rxTime\))[^;]*?;)', re.S)
+              new_src, n = pat2.subn(lambda mm: "#if EFI_CAN_SUPPORT // LUA_CAN_PATCH_APPLIED\n" + mm.group(1) + "\n#endif", src)
+              if n > 0:
+                  open(p, "w").write(new_src)
+                  print("Patched (fallback)", n, "block(s)")
+              else:
+                  print("No match — leaving file alone")
+          else:
+              wrapped = "#if EFI_CAN_SUPPORT // LUA_CAN_PATCH_APPLIED\n" + m.group(1) + "\n#endif\n"
+              src = src[:m.start()] + wrapped + src[m.end():]
+              open(p, "w").write(src)
+              print("Patched", p)
+          PY
+          fi
+      - name: Stub missing rusefi_hw_enums.h for docsenums deps
+        run: |
+          set -e
+          # Upstream rusEFI docs_enums.mk has .docsenums-sentinel deps on
+          # root-level board enum headers like config/boards/cypress/rusefi_hw_enums.h
+          # and config/boards/kinetis/rusefi_hw_enums.h, even when those directories
+          # are not present in the checked-out tree. Create those deps explicitly before
+          # make parses the graph; do not rely only on pattern rules.
+          cd ext/rusefi/firmware
+          shopt -s nullglob
+          rm -f .docsenums-sentinel .docsenums-sentinel.d .docsenums-sentinel.tmp 2>/dev/null || true
+          # Stub existing board dirs that lack the header (fast path)
+          for d in config/boards/*/; do
+            d="${d%/}"
+            name="$(basename "$d")"
+            case "$name" in common_*|hellen|.git*) continue;; esac
+            h="$d/rusefi_hw_enums.h"
+            [ -f "$h" ] || { echo "Stubbing $h"; printf '#pragma once\n' > "$h"; }
+          done
+          for h in $(grep -RhoE '(\./)?config/boards/[^[:space:]]+/rusefi_hw_enums\.h' Makefile* *.mk config hw_layer controllers 2>/dev/null | sed 's#^\./##' | sort -u); do
+            d="$(dirname "$h")"
+            name="$(basename "$d")"
+            case "$name" in common_*|hellen|.git*) continue;; esac
+            mkdir -p "$d"
+            [ -f "$h" ] || { echo "Stubbing explicit docsenums dep $h"; printf '#pragma once\n' > "$h"; }
+          done
+          # Inject a pattern rule into Makefile so any dynamically-referenced missing
+          # config/boards/<x>/rusefi_hw_enums.h (e.g. cypress) is auto-stubbed by make itself.
+          if ! grep -q 'LOVABLE_AUTO_STUB_ENUMS' Makefile; then
+            printf '\n# LOVABLE_AUTO_STUB_ENUMS: auto-create empty rusefi_hw_enums.h for any board dir referenced by .docsenums-sentinel but missing on disk.\nconfig/boards/%%/rusefi_hw_enums.h:\n\t@mkdir -p $(@D)\n\t@printf "#pragma once\\n" > $@\n\t@echo "[lovable] auto-stubbed $@"\n./config/boards/%%/rusefi_hw_enums.h:\n\t@mkdir -p $(@D)\n\t@printf "#pragma once\\n" > $@\n\t@echo "[lovable] auto-stubbed $@"\n' >> Makefile
+          fi
+      - name: Build firmware
+        run: |
+          set -e
+          export META_OUTPUT_ROOT_FOLDER=$(realpath --relative-to=ext/rusefi/firmware generated)/
+          echo "META_OUTPUT_ROOT_FOLDER=$META_OUTPUT_ROOT_FOLDER"
+          export AUTOMATION_REF=$(git branch --show-current || echo main)
+          MI="$(realpath --relative-to=ext/rusefi/firmware meta-info.env)"
+          cd ext/rusefi/firmware
+          source config/boards/common_script_read_meta_env.inc "$MI"
+          echo "=== Pre-build guard: ensure every board dir has rusefi_hw_enums.h ==="
+          shopt -s nullglob
+          rm -f .docsenums-sentinel .docsenums-sentinel.d .docsenums-sentinel.tmp 2>/dev/null || true
+          for d in config/boards/*/ $(grep -RhoE '(\./)?config/boards/[^[:space:]]+/rusefi_hw_enums\.h' Makefile* *.mk config hw_layer controllers 2>/dev/null | sed 's#^\./##' | xargs -r -n1 dirname | sort -u); do
+            d="${d%/}"
+            name="$(basename "$d")"
+            case "$name" in common_*|hellen|.git*) continue;; esac
+            mkdir -p "$d"
+            h="$d/rusefi_hw_enums.h"
+            [ -f "$h" ] || { echo "Stubbing $h"; printf '#pragma once\n// auto-stub: orphan board dir without enums header\n' > "$h"; }
+          done
+          # Custom CI builds only need firmware artifacts; skip optional full-bundle extras that can fail after Gradle succeeds
+          BUNDLE_ARGS="BUNDLE_SIMULATOR=false DO_NOT_BUNDLE_STM32_PROG=yes BUNDLE_TUNERSTUDIO_TS_PROJECT=no"
+          # Use -Otarget so parallel make groups output per-target; tee a log so we never lose the real error.
+          mkdir -p ../../build-logs
+          LOG=../../build-logs/make-bundle.log
+          set +e
+          make bundle -j$(nproc) -r -Otarget $BUNDLE_ARGS 2>&1 | tee "$LOG"
+          rc=${PIPESTATUS[0]}
+          set -e
+          if [ $rc -ne 0 ]; then
+            echo "::warning::Parallel bundle build failed (rc=$rc) — re-running with -j1 V=1 to expose the real error"
+            set +e
+            make bundle -j1 -r V=1 $BUNDLE_ARGS 2>&1 | tee -a "$LOG"
+            rc2=${PIPESTATUS[0]}
+            set -e
+            if [ $rc2 -ne 0 ]; then
+              echo "::group::Last 200 lines of make log"
+              tail -n 200 "$LOG" || true
+              echo "::endgroup::"
+              echo "::error::make bundle failed with exit $rc2 (parallel rc=$rc). See uploaded build-logs artifact."
+              exit $rc2
+            fi
+          fi
+          echo "=== Firmware outputs ==="
+          find build deliver ../artifacts -maxdepth 2 -type f 2>/dev/null | sort || true
+      - name: Upload build logs (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: build-logs/*
+      - name: Inspect generated USB MSD FAT image
+        if: always()
+        run: |
+          set -e
+          shopt -s nullglob
+          sudo apt-get install -y mtools >/dev/null 2>&1 || true
+          for img in ext/rusefi/firmware/build/ramdisk*.img ext/rusefi/firmware/build/*.img; do
+            [ -f "$img" ] || continue
+            echo "=== Contents of $img ==="
+            mdir -i "$img" ::/ || true
+            tmp="$(mktemp -d)"
+            # mdir -b prints full paths like "::/LEIA-ME.TXT" (case varies by mtools). Strip prefix and match case-insensitively.
+            readmes="$(mdir -b -i "$img" ::/ 2>/dev/null | tr -d '\r' | sed 's|^::/||' | grep -Ei '^(LEIA-ME|README).*\.TXT$' || true)"
+            [ -n "$readmes" ] || { echo "::error::No LEIA-ME.TXT found in $img"; exit 1; }
+            while IFS= read -r readme; do
+              [ -n "$readme" ] || continue
+              safe_name="$(echo "$readme" | tr '/' '_')"
+              mcopy -o -i "$img" "::/$readme" "$tmp/$safe_name" >/dev/null 2>&1 || continue
+              echo "--- $img / $readme ---"
+              sed -n '1,80p' "$tmp/$safe_name" || true
+              if grep -q 'Welcome to rusEFI!' "$tmp/$safe_name"; then
+                echo "::error::MSD readme is still the upstream rusEFI template. Custom LEIA-ME was not embedded."
+                exit 1
+              fi
+            done <<< "$readmes"
+          done
+          echo "=== Generated MSD headers ==="
+          ls -la ext/rusefi/firmware/hw_layer/mass_storage/ramdisk_image*.h 2>/dev/null || true
+      - name: Translate generated .ini to PT-BR (post-build)
+        run: |
+          shopt -s nullglob
+          shopt -s globstar
+          for f in generated/tunerstudio/generated/**/*.ini ext/rusefi/firmware/tunerstudio/generated/**/*.ini ext/rusefi/firmware/build/**/*.ini build/**/*.ini; do
+            [ -f "$f" ] && node scripts/translate-ini.mjs "$f" scripts/translations.json "$f"
+          done
+          mkdir -p out-ini
+          cp ext/rusefi/firmware/tunerstudio/generated/rusefi_*.ini out-ini/ 2>/dev/null || true
+          cp ext/rusefi/firmware/build/rusefi_*.ini out-ini/ 2>/dev/null || true
+          for f in generated/tunerstudio/generated/**/*.ini ext/rusefi/firmware/tunerstudio/generated/**/*.ini ext/rusefi/firmware/build/**/*.ini build/**/*.ini; do
+            [ -f "$f" ] && cp "$f" "out-ini/$(basename "$f")"
+          done
+      - name: Upload firmware + translated .ini
+        uses: actions/upload-artifact@v4
+        with:
+          name: urutau-firmware
+          path: |
+            ext/rusefi/artifacts/*.zip
+            ext/rusefi/firmware/deliver/*
+            ext/rusefi/firmware/build/rusefi*.bin
+            ext/rusefi/firmware/build/rusefi*.hex
+            ext/rusefi/firmware/build/rusefi*.elf
+            ext/rusefi/firmware/build/ramdisk*.img
+            out-ini/**
