@@ -97,10 +97,6 @@ pins:
     function: STEPPER_ENABLE
     ts_name: "STEPPER_ENABLE"
   - id: EFI_ADC_11
-    class: switch_inputs
-    function: PRETO_A5_ANAL_GICO
-    ts_name: "PRETO - A5 - ANALÓGICO"
-  - id: EFI_ADC_11
     class: analog_inputs
     function: PRETO_A5_ANAL_GICO
     ts_name: "PRETO - A5 - ANALÓGICO"
@@ -136,7 +132,7 @@ pins:
     class: switch_inputs
     function: PC0
     ts_name: "PC0"
-  - id: C0
+  - id: EFI_ADC_10
     class: analog_inputs
     function: PC0
     ts_name: "PC0"

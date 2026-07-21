@@ -1,5 +1,15 @@
 # Histórico de builds
 
+## v5 — 20/07/2026, 21:23:27
+_1 modificado_
+
+- **alterado** `connectors/custom_firmware.yaml` (+1/-0)
+
+## v4 — 20/07/2026, 21:14:19
+_1 modificado_
+
+- **alterado** `connectors/custom_firmware.yaml` (+0/-0)
+
 ## v3 — 20/07/2026, 21:01:32
 _1 modificado_
 
