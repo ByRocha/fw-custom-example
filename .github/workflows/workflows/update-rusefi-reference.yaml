@@ -1,0 +1,9 @@
+# Neutralized by RusEFI Custom Firmware Studio.
+# The original upstream workflow was replaced — only build-firmware.yaml runs.
+name: disabled
+on: { workflow_dispatch: {} }
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This workflow has been disabled by the firmware generator."

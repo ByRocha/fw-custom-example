@@ -124,3 +124,15 @@ pins:
     class: outputs
     function: CINZA_C1_BOOST
     ts_name: "CINZA - C1 - BOOST"
+  - id: B2
+    class: switch_inputs
+    function: PB2
+    ts_name: "PB2"
+  - id: C0
+    class: switch_inputs
+    function: PC0
+    ts_name: "PC0"
+  - id: EFI_ADC_10
+    class: analog_inputs
+    function: PC0
+    ts_name: "PC0"

@@ -107,6 +107,10 @@ static void customBoardDefaultConfiguration() {
 	// TS_TX on 
 	// NONE on PB5
 	// NONE on PA15
+	// NONE on PB2
+	// NONE on PC0
+	// NONE on PC14
+	// NONE on PC15
 
 	// === Voltage dividers (global + VBAT) ===
 	// Global analog divider ratio = 1.500 (Rt=10000, Rb=20000) — applied to ALL analog inputs except VBAT
